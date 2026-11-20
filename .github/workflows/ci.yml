@@ -1,0 +1,24 @@
+name: Python model and source quality
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  static-and-tests:
+    name: static-and-tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Syntax compile
+        run: python -m compileall -q still tests
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Shell syntax
+        run: |
+          sh -n run.sh
+          sh -n install-crostini.sh
