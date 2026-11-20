@@ -1,16 +1,22 @@
-# Source / CI / Crostini / Release status
+# Still Linux — source, CI, device and release status
 
-**2026-11-20:** P01–P03 browser baseline **SOURCE MERGED** in PR #1 to main `105c21e4d2900aa36d3925cce63851e8eff218c0`; exact PR source head `49fe295fc3f80bdc7d7a46860a6d9fbfd606321d` passed `static-and-tests` CI. Crostini GUI, GPU performance and security runtime acceptance **NOT RUN**.
+**2026-11-20.** Native Linux browser source has two completed focused PRs; device acceptance has **not** happened.
 
-**Current source candidate:** P05 Arc-like groups/reordering in `feat/arc-tab-groups-organizing-20261120`; schema v3, migrated from v1/v2, group hierarchy and Space color controls. Local model suite for corresponding logic: 30 tests passed; GitHub exact-head CI pending. Do not mark it merged before confirmed CI and review.
-
-| Unit | Source | CI | Device | Release |
+| Milestone | Source | GitHub exact-head CI | Chromebook device | Packaged release |
 |---|---|---|---|---|
-| P01 native GTK/WebKit | Merged PR #1 | PASS on #1 exact head | NOT RUN | Not released |
-| P02 browser shell | Merged PR #1 | PASS on #1 exact head | NOT RUN | Not released |
-| P03 named Spaces & pins | Merged PR #1 | PASS on #1 exact head | NOT RUN | Not released |
-| P05 groups and ordering | PR candidate branch | NOT RUN at current head | NOT RUN | Not released |
-| P04 visual parity | Partial style tokens | NOT RUN | NOT RUN | Not released |
-| P11 Chrome extensions | Architecture-only, issue #3 | NOT RUN | NOT RUN | Not released |
+| P01 native WebKit/GTK launch | PR #1 merged to main `105c21e` | PASS `static-and-tests` | NOT RUN | No |
+| P02 basic tabs/private/history | PR #1 merged | PASS on #1 head `49fe295` | NOT RUN | No |
+| P03 Spaces | PR #1 merged | PASS on #1 head | NOT RUN | No |
+| P05 collapsible groups/reordering menus | PR #5 merged `83bd046` | PASS on #5 head `0fbaf93` | NOT RUN | No |
+| P04 visual 1:1 comparison | Basic neutral CSS, not equivalent complete UX | No visual checks | NOT RUN | No |
+| P11 Chrome extensions | Architecture/compatibility research only, issue #3 | NOT RUN | NOT RUN | No |
+| P09 login-isolated profiles | Not implemented | NOT RUN | NOT RUN | No |
+| P07 split/peek | Not implemented | NOT RUN | NOT RUN | No |
 
-See issues #2, #3, #4 and the one `plans/SEARCH_LINUX_EXECUTION.md` roadmap.
+**Outstanding:** Issue #4 needs owner device logs. Issue #2 needs full drag/drop and pixel comparison. Issue #3 needs verified engine test matrix and extension host. For complete priorities see `plans/SEARCH_LINUX_EXECUTION.md`.
+
+Baseline source merge verification:
+- PR #1 source head `49fe295fc3f80bdc7d7a46860a6d9fbfd606321d`, run `44655226370`, SUCCESS, main `105c21e4d2900aa36d3925cce63851e8eff218c0`.
+- PR #5 source head `0fbaf9381a717b2d19d814efb0c3c37c6c1e6cdc`, run `44655830520`, SUCCESS, main `83bd04605f0a2633a16cb8000574d0a08372f1df`.
+
+No GUI performance, security, or Chrome extension claim is justified by the model tests alone.

@@ -1,10 +1,13 @@
 # Changelog
 
 ## Unreleased
-- P05: Arc-like collapsible tab group headers, tab context actions and reorder controls, Space color picker; schema-v3 with v1/v2 migration. Source candidate pending exact-head CI and device QA.
-- Initialized canonical DoorBlox/search-linux repository for Still.
-- Established ORBIT-style single-lane operations, exact-source/CI/device/release distinctions, handoff and one roadmap.
-- Documented Craft Anything-style evidence capture/replication and a separate browser extension architecture decision gate.
+- Added an Arc-like sidebar Spaces dock, compact pinned tabs, named per-Space tab organization and keyboard switching.
+- Added group headings with collapse/expand, right-click grouping/ungrouping, reorder up/down, Space color picker.
+- Introduced backwards-readable session schema v3 and safeguards against private tab URL, title or ID persistence.
+- Initialized native GTK4/WebKitGTK6 project with model tests and CI.
+- Added ORBIT-style single-lane handoff and roadmap, Craft Anything-inspired visual replication contract.
+- **Source merged only.** Crostini runtime performance and user acceptance pending; no extensions, profiles, signed installer or release.
 
-## 0.1.0 (local prototype; not published as GitHub release)
-- Native GTK4 + WebKitGTK6 browser baseline previously delivered as standalone ZIP; exact runtime acceptance on Crostini pending.
+## Milestones
+- 2026-11-20 PR #1 `105c21e`: source baseline, Spaces and CI.
+- 2026-11-20 PR #5 `83bd046`: tab groups, organizing menus and schema-v3 migration.
