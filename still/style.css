@@ -1,0 +1,54 @@
+/* Native neutral browser chrome, based on Search Design.swift's quiet palette. */
+window { background: #fff; color: #171717; }
+.chrome-header { min-height: 42px; background: #f5f5f5; border-bottom: 1px solid #e8e8e8; }
+.chrome-button, .small-button { border: 0; box-shadow: none; background: transparent; color: #666; border-radius: 7px; min-height: 30px; min-width: 30px; padding: 0 4px; font-size: 17px; }
+.chrome-button:hover, .small-button:hover { background: #e7e7e7; }
+.address { background: white; color: #202020; border-radius: 8px; border: 1px solid #e6e6e6; box-shadow: none; padding: 0 10px; min-height: 32px; margin: 0 5px; }
+.address:focus { border-color: #a5a5a5; }
+.sidebar { background: #f4f4f4; border-right: 1px solid #e9e9e9; padding-top: 8px; padding-bottom: 7px; }
+.sidebar-header { margin: 0 9px; min-height: 32px; }
+.wordmark { font-weight: 700; font-size: 15px; color: #292929; letter-spacing: -0.5px; }
+.space-title { background: transparent; box-shadow: none; border: 0; border-radius: 7px; color: #474747; font-size: 12px; font-weight: 650; min-height: 33px; margin: 0 9px 2px; padding: 4px 9px; }
+.space-title:hover { background: #e9e9e9; }
+.tab-row { border-radius: 8px; min-height: 32px; padding: 0 2px; }
+.tab-row:hover { background: #ededed; }
+.tab-row.selected { background: #e3e3e3; }
+.tab-title { border: 0; background: transparent; box-shadow: none; color: #747474; font-size: 12.5px; font-weight: 400; padding: 3px 9px; min-height: 29px; }
+.tab-row.selected .tab-title { color: #222; font-weight: 600; }
+.tab-close { border: 0; background: transparent; box-shadow: none; border-radius: 6px; color: #aaa; font-size: 15px; padding: 0; min-width: 24px; min-height: 24px; }
+.tab-close:hover { background: #d4d4d4; }
+.pin { border: 0; box-shadow: none; border-radius: 9px; background: #e5e5e5; color: #666; font-size: 13px; font-weight: 650; padding: 0; min-width: 34px; min-height: 34px; }
+.pin.selected { background: #d5d5d5; color: #222; }
+.sidebar-footer { margin: 0 9px; border-top: 1px solid #e5e5e5; padding-top: 7px; }
+.space-dock { padding: 5px 12px 0; min-height: 41px; border-top: 1px solid #e5e5e5; }
+.space-pill { border-radius: 10px; min-width: 30px; min-height: 30px; border: 1px solid transparent; box-shadow: none; padding: 0; color: #555; background: #e4e4e4; font-size: 12px; font-weight: 600; }
+.space-pill.selected { border: 2px solid #707070; }
+.space-pill.space-blue { background: #dce9f6; color: #315d8b; }
+.space-pill.space-sage { background: #e0eadd; color: #476b45; }
+.space-pill.space-amber { background: #f7ead1; color: #916822; }
+.space-pill.space-rose { background: #f3e1e6; color: #8d5363; }
+.space-pill.space-violet { background: #e9e2f5; color: #68558f; }
+.top-tabs { background: #f4f4f4; border-bottom: 1px solid #e5e5e5; min-height: 39px; }
+.horizontal-tab { min-width: 140px; max-width: 195px; }
+.menu-item { border: 0; border-radius: 7px; box-shadow: none; background: transparent; color: #424242; font-size: 12px; min-height: 32px; padding: 3px 10px; }
+.menu-item:hover { background: #eaeaea; }
+.welcome { padding: 20px; color: #888; }
+.welcome-title { font-weight: 700; font-size: 37px; color: #333; letter-spacing: -2px; }
+.statusline { background: #fff; color: #888; font-size: 11px; padding: 1px 9px; min-height: 16px; }
+.findbar { padding: 4px 10px; background: #f4f4f4; border-bottom: 1px solid #e5e5e5; }
+.dark-mode { background: #1c1c1c; color: #eee; }
+.dark-mode .chrome-header, .dark-mode .top-tabs { background: #161616; border-color: #353535; }
+.dark-mode .sidebar { background: #131313; border-color: #343434; }
+.dark-mode .wordmark, .dark-mode .welcome-title { color: #f2f2f2; }
+.dark-mode .address { background: #272727; color: #eee; border-color: #363636; }
+.dark-mode .space-title, .dark-mode .menu-item { color: #ddd; }
+.dark-mode .tab-row:hover { background: #252525; }
+.dark-mode .tab-row.selected { background: #303030; }
+.dark-mode .tab-title { color: #aaa; }
+.dark-mode .tab-row.selected .tab-title { color: #fff; }
+.dark-mode .pin, .dark-mode .space-pill { background: #292929; color: #ccc; }
+.dark-mode .pin.selected { background: #3c3c3c; }
+.dark-mode .space-pill.selected { border-color: #bdbdbd; }
+.dark-mode .sidebar-footer, .dark-mode .space-dock { border-color: #343434; }
+.dark-mode .statusline { background: #171717; color: #aaa; }
+.dark-mode .chrome-button, .dark-mode .small-button, .dark-mode .tab-close { color: #b6b6b6; }
