@@ -11,10 +11,11 @@ import re
 import tempfile
 import uuid
 
-SCHEMA = 2
+SCHEMA = 3
 DEFAULT_SPACE = "home"
 SPACE_COLORS = ("neutral", "blue", "sage", "amber", "rose", "violet")
 MAX_SPACES = 12
+MAX_GROUPS = 80
 SEARCH_TEMPLATE = "https://www.google.com/search?q={query}"
 HOME = "about:blank"
 MAX_HISTORY = 2000
@@ -91,10 +92,11 @@ class Tab:
     pinned: bool = False
     private: bool = False
     space_id: str = DEFAULT_SPACE
+    group_id: str | None = None
 
     def snapshot(self) -> dict:
         return {"id": self.id, "url": self.url, "title": self.title,
-                "pinned": self.pinned, "space_id": self.space_id}
+                "pinned": self.pinned, "space_id": self.space_id, "group_id": self.group_id}
 
     @classmethod
     def from_json(cls, raw: dict) -> "Tab":
@@ -106,7 +108,8 @@ class Tab:
         title = str(raw.get("title", "New Tab"))[:200] or "New Tab"
         return cls(id=str(raw.get("id"))[:64] or uuid.uuid4().hex,
                    url=location, title=title, pinned=bool(raw.get("pinned", False)),
-                   space_id=str(raw.get("space_id", DEFAULT_SPACE))[:64])
+                   space_id=str(raw.get("space_id", DEFAULT_SPACE))[:64],
+                   group_id=str(raw.get("group_id"))[:64] if raw.get("group_id") else None)
 
 
 @dataclass
@@ -132,8 +135,30 @@ class Space:
 
 
 @dataclass
+class TabGroup:
+    id: str = field(default_factory=lambda: uuid.uuid4().hex)
+    name: str = "Group"
+    space_id: str = DEFAULT_SPACE
+    collapsed: bool = False
+
+    def snapshot(self) -> dict:
+        return {"id": self.id, "name": self.name, "space_id": self.space_id,
+                "collapsed": self.collapsed}
+
+    @classmethod
+    def from_json(cls, raw: dict) -> "TabGroup":
+        if not isinstance(raw, dict):
+            raise ValueError("invalid saved group")
+        name = str(raw.get("name", "Group")).strip()[:40] or "Group"
+        return cls(id=str(raw.get("id", ""))[:64] or uuid.uuid4().hex,
+                   name=name, space_id=str(raw.get("space_id", DEFAULT_SPACE))[:64],
+                   collapsed=bool(raw.get("collapsed", False)))
+
+
+@dataclass
 class BrowserState:
     tabs: list[Tab] = field(default_factory=list)
+    groups: list[TabGroup] = field(default_factory=list)
     spaces: list[Space] = field(default_factory=lambda: [Space(id=DEFAULT_SPACE)])
     active_space_id: str = DEFAULT_SPACE
     active_id: str | None = None
@@ -220,6 +245,7 @@ class BrowserState:
         if tab.private:
             raise ValueError("private tabs cannot be moved between spaces")
         tab.space_id = target_space_id
+        tab.group_id = None
         tab.pinned = False
         if tab_id == self.active_id:
             self.ensure_tab()
@@ -230,10 +256,86 @@ class BrowserState:
         if not any(s.id == space_id for s in self.spaces):
             raise ValueError("unknown space")
         self.tabs = [t for t in self.tabs if t.space_id != space_id]
+        self.groups = [g for g in self.groups if g.space_id != space_id]
         self.spaces = [s for s in self.spaces if s.id != space_id]
         if self.active_space_id == space_id:
             self.active_space_id = self.spaces[0].id
         self.ensure_tab()
+
+    def set_space_color(self, space_id: str, color: str) -> None:
+        if color not in SPACE_COLORS:
+            raise ValueError("unsupported space color")
+        space = next((s for s in self.spaces if s.id == space_id), None)
+        if space is None:
+            raise ValueError("unknown space")
+        space.color = color
+
+    def groups_in_space(self, space_id: str | None = None) -> list[TabGroup]:
+        selected = space_id or self.current_space().id
+        return [group for group in self.groups if group.space_id == selected]
+
+    def create_group(self, name: str, tab_id: str | None = None) -> TabGroup:
+        name = name.strip()[:40]
+        if not name:
+            raise ValueError("group name cannot be empty")
+        if len(self.groups) >= MAX_GROUPS:
+            raise ValueError("group limit reached")
+        group = TabGroup(name=name, space_id=self.current_space().id)
+        if tab_id is not None:
+            tab = next((t for t in self.tabs if t.id == tab_id), None)
+            if tab is None or tab.space_id != group.space_id or tab.private:
+                raise ValueError("cannot group this tab")
+        self.groups.append(group)
+        if tab_id is not None:
+            self.set_tab_group(tab_id, group.id)
+        return group
+
+    def rename_group(self, group_id: str, name: str) -> None:
+        name = name.strip()[:40]
+        group = next((g for g in self.groups if g.id == group_id), None)
+        if group is None or not name:
+            raise ValueError("invalid group or name")
+        group.name = name
+
+    def toggle_group(self, group_id: str) -> bool:
+        group = next((g for g in self.groups if g.id == group_id), None)
+        if group is None:
+            raise ValueError("unknown group")
+        group.collapsed = not group.collapsed
+        return group.collapsed
+
+    def set_tab_group(self, tab_id: str, group_id: str | None) -> None:
+        tab = next((t for t in self.tabs if t.id == tab_id), None)
+        if tab is None or tab.private:
+            raise ValueError("invalid tab for grouping")
+        group = next((g for g in self.groups if g.id == group_id), None) if group_id else None
+        if group_id is not None and (group is None or group.space_id != tab.space_id):
+            raise ValueError("cannot group across spaces")
+        tab.group_id = group_id
+        if group is not None:
+            tab.pinned = False
+            group.collapsed = False
+
+    def delete_group(self, group_id: str) -> None:
+        if not any(g.id == group_id for g in self.groups):
+            raise ValueError("unknown group")
+        for tab in self.tabs:
+            if tab.group_id == group_id:
+                tab.group_id = None
+        self.groups = [g for g in self.groups if g.id != group_id]
+
+    def move_tab_in_group(self, tab_id: str, delta: int) -> None:
+        tab = next((t for t in self.tabs if t.id == tab_id), None)
+        if tab is None:
+            raise ValueError("unknown tab")
+        siblings = [t for t in self.tabs if t.space_id == tab.space_id and
+                    t.group_id == tab.group_id and t.pinned == tab.pinned]
+        index = siblings.index(tab)
+        target = index + delta
+        if not 0 <= target < len(siblings):
+            return
+        left, right = self.tabs.index(tab), self.tabs.index(siblings[target])
+        self.tabs[left], self.tabs[right] = self.tabs[right], self.tabs[left]
 
     def record_visit(self, url: str, title: str, *, private: bool = False) -> None:
         if private or url == HOME or urlsplit(url).scheme not in ("http", "https"):
@@ -270,6 +372,7 @@ class BrowserState:
         return {
             "version": SCHEMA,
             "spaces": saved_spaces,
+            "groups": [g.snapshot() for g in self.groups],
             "active_space_id": active_space,
             "tabs": [t.snapshot() for t in normal],
             "active_id": active_id,
@@ -282,7 +385,7 @@ class BrowserState:
 
     @classmethod
     def from_json(cls, raw: dict) -> "BrowserState":
-        if not isinstance(raw, dict) or raw.get("version") not in (1, SCHEMA):
+        if not isinstance(raw, dict) or raw.get("version") not in (1, 2, SCHEMA):
             return cls()
         tabs = []
         for entry in raw.get("tabs", [])[:100]:
@@ -302,11 +405,27 @@ class BrowserState:
         for tab in tabs:
             if tab.space_id not in known:
                 tab.space_id = spaces[0].id
+        groups = []
+        for entry in raw.get("groups", [])[:MAX_GROUPS]:
+            try:
+                group = TabGroup.from_json(entry)
+                if group.space_id in known and group.id not in {g.id for g in groups}:
+                    groups.append(group)
+            except (ValueError, TypeError):
+                continue
+        known_groups = {g.id: g for g in groups}
+        for tab in tabs:
+            if tab.group_id and (tab.group_id not in known_groups or
+                                 known_groups[tab.group_id].space_id != tab.space_id):
+                tab.group_id = None
+            if tab.group_id and tab.pinned:
+                tab.pinned = False
         raw_history = raw.get("history", [])
         raw_bookmarks = raw.get("bookmarks", [])
         state = cls(
             tabs=tabs,
             spaces=spaces,
+            groups=groups,
             active_space_id=raw.get("active_space_id") if raw.get("active_space_id") in known else spaces[0].id,
             active_id=raw.get("active_id"),
             history=[r for r in raw_history if isinstance(r, dict) and urlsplit(str(r.get("url", ""))).scheme in ("http", "https")][:MAX_HISTORY],
