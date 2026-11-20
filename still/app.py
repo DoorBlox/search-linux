@@ -238,6 +238,10 @@ class StillWindow(Gtk.ApplicationWindow):
         if tab is None:
             return
         self.state.select_tab(tab.id)
+        if tab.group_id:
+            group = next((g for g in self.state.groups if g.id == tab.group_id), None)
+            if group is not None and group.collapsed:
+                group.collapsed = False
         self._placeholder(tab)
         if tab.url != HOME:
             self.ensure_view(tab)
@@ -263,10 +267,33 @@ class StillWindow(Gtk.ApplicationWindow):
                 if active:
                     pin.add_css_class("selected")
                 self.pin_row.append(pin)
-            else:
-                self.tab_column.append(self.tab_button(tab, active))
             self.top_tabs.append(self.tab_button(tab, active, horizontal=True))
         self.top_tabs.append(button("+", "New tab", self.new_tab))
+
+        # Arc-like hierarchy: loose tabs, then collapsible groups within Space.
+        for tab in visible:
+            if not tab.pinned and tab.group_id is None:
+                self.tab_column.append(self.tab_button(tab, tab.id == self.state.active_id))
+        for group in self.state.groups_in_space():
+            members = [t for t in visible if t.group_id == group.id]
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+            row.add_css_class("group-heading-row")
+            arrow = "▸" if group.collapsed else "▾"
+            label = f"{arrow}  {group.name}   {len(members)}"
+            select = button(label, "Expand or collapse tab group",
+                            lambda gid=group.id: self.toggle_group(gid), "group-heading")
+            select.set_hexpand(True)
+            row.append(select)
+            row.append(button("⋯", "Group options",
+                              lambda anchor=row, group_id=group.id: self.group_menu(anchor, group_id),
+                              "group-menu-button"))
+            if any(t.id == self.state.active_id for t in members):
+                row.add_css_class("group-has-active")
+            self.tab_column.append(row)
+            if not group.collapsed:
+                for tab in members:
+                    self.tab_column.append(self.tab_button(tab, tab.id == self.state.active_id))
+
         current = self.state.current_space()
         self.space_title.set_label(f"{current.name} ▾")
         clear_children(self.space_dock)
@@ -283,6 +310,8 @@ class StillWindow(Gtk.ApplicationWindow):
     def tab_button(self, tab, active=False, horizontal=False):
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         row.add_css_class("tab-row")
+        if tab.group_id and not horizontal:
+            row.add_css_class("grouped-tab")
         if active:
             row.add_css_class("selected")
         if horizontal:
@@ -308,14 +337,33 @@ class StillWindow(Gtk.ApplicationWindow):
         box.set_margin_end(10)
         box.set_margin_top(9)
         box.set_margin_bottom(9)
-        box.append(button("Unpin" if tab.pinned else "Pin tab", "Keep as a compact tile",
-                          lambda: (self.toggle_pin(tab.id), pop.popdown()), "menu-item"))
         if not tab.private:
+            box.append(button("Unpin" if tab.pinned else "Pin tab",
+                              "Keep as a compact tile", lambda:
+                              (self.toggle_pin(tab.id), pop.popdown()), "menu-item"))
+            box.append(button("Move up", "Move tab before previous sibling",
+                              lambda: (self.reorder_tab(tab.id, -1), pop.popdown()), "menu-item"))
+            box.append(button("Move down", "Move tab after next sibling",
+                              lambda: (self.reorder_tab(tab.id, 1), pop.popdown()), "menu-item"))
+            box.append(Gtk.Separator())
+            if tab.group_id:
+                box.append(button("Remove from group", "Keep as a loose tab",
+                                  lambda: (self.set_tab_group(tab.id, None), pop.popdown()),
+                                  "menu-item"))
+            for group in self.state.groups_in_space(tab.space_id):
+                if group.id != tab.group_id:
+                    box.append(button(f"Add to {group.name}", "Move tab into this group",
+                                      lambda gid=group.id: (self.set_tab_group(tab.id, gid),
+                                                            pop.popdown()), "menu-item"))
+            box.append(button("+ New group with tab", "Create named group",
+                              lambda: (pop.popdown(), self.group_dialog(tab_id=tab.id)),
+                              "menu-item"))
+            box.append(Gtk.Separator())
             for space in self.state.spaces:
                 if space.id != tab.space_id:
                     box.append(button(f"Move to {space.name}", "Move tab to another Space",
-                                      lambda sid=space.id: (self.move_tab(tab.id, sid), pop.popdown()),
-                                      "menu-item"))
+                                      lambda sid=space.id: (self.move_tab(tab.id, sid),
+                                                            pop.popdown()), "menu-item"))
         pop.set_child(box)
         pop.popup()
 
@@ -388,6 +436,8 @@ class StillWindow(Gtk.ApplicationWindow):
     def toggle_pin(self, tab_id):
         tab = next((t for t in self.state.tabs if t.id == tab_id), None)
         if tab and not tab.private:
+            if not tab.pinned and tab.group_id:
+                self.state.set_tab_group(tab.id, None)
             tab.pinned = not tab.pinned
             self.refresh_ui()
             self.queue_save()
@@ -448,6 +498,94 @@ class StillWindow(Gtk.ApplicationWindow):
                           "menu-item"))
         box.append(button("+ New Space", "Add a Space",
                           lambda: (pop.popdown(), self.new_space_dialog()),
+                          "menu-item"))
+        colors = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        colors.add_css_class("color-picker")
+        colors.append(Gtk.Label(label="Color  "))
+        for color in SPACE_COLORS:
+            swatch = button("●", f"Use {color} Space color",
+                            lambda chosen=color: (self.set_space_color(chosen), pop.popdown()),
+                            "color-swatch")
+            swatch.add_css_class(f"space-{color}")
+            colors.append(swatch)
+        box.append(colors)
+        pop.set_child(box)
+        pop.popup()
+
+    def set_space_color(self, color):
+        self.state.set_space_color(self.state.active_space_id, color)
+        self.refresh_ui()
+        self.queue_save()
+
+    def toggle_group(self, group_id):
+        self.state.toggle_group(group_id)
+        self.refresh_ui()
+        self.queue_save()
+
+    def reorder_tab(self, tab_id, delta):
+        self.state.move_tab_in_group(tab_id, delta)
+        self.refresh_ui()
+        self.queue_save()
+
+    def set_tab_group(self, tab_id, group_id):
+        try:
+            self.state.set_tab_group(tab_id, group_id)
+        except ValueError as error:
+            self.status.set_text(str(error))
+            return
+        self.refresh_ui()
+        self.queue_save()
+
+    def group_dialog(self, tab_id=None, edit_id=None):
+        target = next((g for g in self.state.groups if g.id == edit_id), None)
+        dialog = Gtk.Dialog(title="Rename group" if target else "New tab group",
+                            transient_for=self, modal=True)
+        dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Save" if target else "Create", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_response(Gtk.ResponseType.ACCEPT)
+        content = dialog.get_content_area()
+        content.set_margin_start(18)
+        content.set_margin_end(18)
+        content.set_margin_top(16)
+        content.set_margin_bottom(16)
+        entry = Gtk.Entry()
+        entry.set_placeholder_text("Group name")
+        entry.set_text(target.name if target else "")
+        entry.set_activates_default(True)
+        content.append(entry)
+        def respond(widget, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                try:
+                    if target:
+                        self.state.rename_group(target.id, entry.get_text())
+                    else:
+                        self.state.create_group(entry.get_text(), tab_id)
+                    self.refresh_ui()
+                    self.queue_save()
+                except ValueError as error:
+                    self.status.set_text(str(error))
+            widget.destroy()
+        dialog.connect("response", respond)
+        dialog.present()
+        entry.grab_focus()
+
+    def group_menu(self, anchor, group_id):
+        group = next((g for g in self.state.groups if g.id == group_id), None)
+        if group is None:
+            return
+        pop = Gtk.Popover()
+        pop.set_parent(anchor)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        box.set_margin_start(10)
+        box.set_margin_end(10)
+        box.set_margin_top(10)
+        box.set_margin_bottom(10)
+        box.append(button("Rename group", "Rename this tab group",
+                          lambda: (pop.popdown(), self.group_dialog(edit_id=group_id)),
+                          "menu-item"))
+        box.append(button("Ungroup tabs", "Keep tabs, remove only their group heading",
+                          lambda: (self.state.delete_group(group_id),
+                                   self.refresh_ui(), self.queue_save(), pop.popdown()),
                           "menu-item"))
         pop.set_child(box)
         pop.popup()

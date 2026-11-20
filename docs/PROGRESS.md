@@ -1,14 +1,16 @@
 # Source / CI / Crostini / Release status
 
-As of 2026-11-20, main initialized. Exact current source and PR status must be retrieved live before editing.
+**2026-11-20:** P01–P03 browser baseline **SOURCE MERGED** in PR #1 to main `105c21e4d2900aa36d3925cce63851e8eff218c0`; exact PR source head `49fe295fc3f80bdc7d7a46860a6d9fbfd606321d` passed `static-and-tests` CI. Crostini GUI, GPU performance and security runtime acceptance **NOT RUN**.
 
-| Unit | Source | CI | Crostini device | Release |
+**Current source candidate:** P05 Arc-like groups/reordering in `feat/arc-tab-groups-organizing-20261120`; schema v3, migrated from v1/v2, group hierarchy and Space color controls. Local model suite for corresponding logic: 30 tests passed; GitHub exact-head CI pending. Do not mark it merged before confirmed CI and review.
+
+| Unit | Source | CI | Device | Release |
 |---|---|---|---|---|
-| P00 upstream audit | Docs prepared | NOT RUN | Not applicable | Not shipped |
-| P01 native GTK/WebKit baseline | Local ZIP prior turn, repository upload in progress | 9 model tests previously passed locally | NOT RUN | Prototype only |
-| P02 browser shell | Local ZIP prior turn, repository upload in progress | Python syntax previously passed locally | NOT RUN | Prototype only |
-| P03 Arc-style Spaces v1 | Local implementation candidate | 20 unit tests passed in local container (2026-11-20), GUI NOT RUN | NOT RUN | Not shipped |
-| P04 visual parity | Tokens and sidebar work started | NOT RUN | NOT RUN | Not shipped |
-| P11 Chrome extension compatibility | Architecture research only | NOT RUN | NOT RUN | Not shipped |
+| P01 native GTK/WebKit | Merged PR #1 | PASS on #1 exact head | NOT RUN | Not released |
+| P02 browser shell | Merged PR #1 | PASS on #1 exact head | NOT RUN | Not released |
+| P03 named Spaces & pins | Merged PR #1 | PASS on #1 exact head | NOT RUN | Not released |
+| P05 groups and ordering | PR candidate branch | NOT RUN at current head | NOT RUN | Not released |
+| P04 visual parity | Partial style tokens | NOT RUN | NOT RUN | Not released |
+| P11 Chrome extensions | Architecture-only, issue #3 | NOT RUN | NOT RUN | Not released |
 
-Do not elevate local container results to GitHub CI or device PASS. Next: source check-in, focused PR exact head, Crostini tests. Other milestones remain TODO (see roadmap).
+See issues #2, #3, #4 and the one `plans/SEARCH_LINUX_EXECUTION.md` roadmap.

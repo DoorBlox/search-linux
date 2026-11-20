@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- P05: Arc-like collapsible tab group headers, tab context actions and reorder controls, Space color picker; schema-v3 with v1/v2 migration. Source candidate pending exact-head CI and device QA.
 - Initialized canonical DoorBlox/search-linux repository for Still.
 - Established ORBIT-style single-lane operations, exact-source/CI/device/release distinctions, handoff and one roadmap.
 - Documented Craft Anything-style evidence capture/replication and a separate browser extension architecture decision gate.

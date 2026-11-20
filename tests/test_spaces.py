@@ -76,7 +76,7 @@ class SpaceTests(unittest.TestCase):
         self.assertTrue(state.active().pinned)
         self.assertEqual(state.active().space_id, DEFAULT_SPACE)
         self.assertEqual(state.bookmarks, old["bookmarks"])
-        self.assertEqual(state.saved_dict()["version"], 2)
+        self.assertEqual(state.saved_dict()["version"], 3)
 
     def test_roundtrip_retains_space_name_color_and_tab(self):
         with tempfile.TemporaryDirectory() as root:
